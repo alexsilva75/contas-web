@@ -2,16 +2,20 @@ const API_URL = import.meta.env.API_URL;
 
 export class ApiError extends Error{
     status;
-    constructor(status, message){
+    constructor(status: number, message: string){
         super(message);
         this.status = status;
         this.name = 'ApiError'
     }
 }
 
-const api = async (endpoint, options = {
-   
-}, auth = false) => {
+interface RequestOptions extends RequestInit{
+    auth?: boolean;
+
+}
+
+export const api = async (endpoint: string, options: RequestOptions) => {
+
     const { auth = true, ...fetchOptions } = options;
 
     const headers = new Headers(fetchOptions.headers);
@@ -64,4 +68,3 @@ const api = async (endpoint, options = {
 
 }
 
-export default  api;
