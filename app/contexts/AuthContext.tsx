@@ -7,13 +7,13 @@ import {
     useCallback,
 } from "react";
 
-import { authService } from "../../services/auth.service";
+import { authService } from "../services/auth.service";
 import type { User } from "~/interfaces/User";
 
 import { isTokenExpired, getTokenExpiration } from "~/utils/jwt";
 
 interface AuthContextData{
-    isAuthenticated: boolean;
+    isAuthenticated: boolean | null;
     user: User | null;
     login: (email: string, password: string) => Promise<void>;
     logout: () => void;
@@ -26,95 +26,92 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-    useEffect(() => {
-    const token = localStorage.getItem("token");
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+    const [user, setUser] = useState<User | null>(null);
 
-    setIsAuthenticated(token !== null);
+    const logout = useCallback((): void => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+        setIsAuthenticated(false);
+        setUser(null);
     }, []);
 
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        const storedUser = localStorage.getItem("user");
 
-
-    useEffect(()=>{
-        const token = localStorage.getItem('token');
-
-        if(token && isTokenExpired()){
-            logout();
+        if (!token) {
+            setIsAuthenticated(false);
+            return;
         }
-    },[]);
+
+        if (isTokenExpired()) {
+            logout();
+            return;
+        }
+
+        setIsAuthenticated(true);
+
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
+
+    }, [logout]);
+
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-
-        if(!token || !isAuthenticated){
+        if (!isAuthenticated) {
             return;
         }
 
         const expiration = getTokenExpiration();
 
-
-        if(!expiration){
+        if (!expiration) {
             logout();
             return;
         }
 
         const timeout = expiration - Date.now();
 
-        if(timeout <= 0){
+        if (timeout <= 0) {
             logout();
             return;
-
         }
 
         const timer = setTimeout(logout, timeout);
 
         return () => clearTimeout(timer);
 
-    }, [isAuthenticated])
+    }, [isAuthenticated, logout]);
 
-    const [user, setUser] = useState<User | null>(null);
 
     useEffect(() => {
-        const storedUser = JSON.parse( localStorage.getItem('user') ?? '{}');
-        
-        if(Object.keys(storedUser).length !== 0){
-            setUser(storedUser);
-        }     
+        window.addEventListener("auth:logout", logout);
 
-    },[])
-
-    useEffect(() =>{
-        window.addEventListener('auth:logout', logout);
-
-        return () =>{
-            window.removeEventListener('auth:logout', logout);
+        return () => {
+            window.removeEventListener("auth:logout", logout);
         };
-    }, []);
+    }, [logout]);
 
 
-    const logout = useCallback((): void => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setIsAuthenticated(false);
+    async function login(email: string, password: string): Promise<void> {
 
-    }, []);
-
-    async function login(email: string, password: string): Promise<void>{
         const response = await authService.login({
             email,
             password
         });
 
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.user));
+        localStorage.setItem("token", response.token);
+        localStorage.setItem("user", JSON.stringify(response.user));
+
         setIsAuthenticated(true);
         setUser(response.user);
 
-        setIsAuthenticated(true);
-
-        
+        console.log("Login realizado!");
     }
+
 
     return (
         <AuthContext.Provider

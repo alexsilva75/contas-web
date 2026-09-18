@@ -1,95 +1,109 @@
-import { useState } from 'react';
-import { Navigate } from 'react-router';
-import { useAuth } from '../../contexts/AuthContext';
-import { ApiError } from '../../../services/api';
-import {useNavigate} from 'react-router';
-import {Card, Typography, TextField, Button, Box } from '@mui/material';
+import {
+    Form,
+    useActionData,
+    useNavigation,
+} from "react-router";
 
+import type { Route } from "../../routes/+types/login";
+
+import {
+    Card,
+    Typography,
+    TextField,
+    Button,
+    Box,
+    Alert,
+} from "@mui/material";
 
 export function Login() {
-  const {isAuthenticated, login } = useAuth();
 
-  if(isAuthenticated){
-    return <Navigate to="/dashboard" replace />
-  }
-  const navigate = useNavigate();
+    const actionData =
+        useActionData<typeof import("../../routes/login").action>();
 
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
-  const [erro, setErro] = useState('');
-  const [carregando, setCarregando] = useState(false);
+    const navigation = useNavigation();
 
-  async function handleSubmit(event: any) {
-    event.preventDefault();
+    const isSubmitting =
+        navigation.state === "submitting";
 
-    setErro('');
-    setCarregando(true);
+    return (
+        <div className="container">
+            <div className="row justify-content-center mt-5">
 
-    try {
-      await login(email, senha);
-
-      navigate('/dashboard', {replace: true})
-      
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 401) {
-        setErro('Email ou senha inválidos.');
-      } else {
-        setErro('Não foi possível realizar o login.');
-      }
-    } finally {
-      setCarregando(false);
-    }
-  }
-
-  return (
-    <div className="container">
-      <div className="row justify-content-center mt-5">
-        <Box sx={{display: 'flex', justifyContent: 'space-around'}}>
-          <Card sx={{paddingX: 4, paddingY: 2, mt: 4}}>
-            
-              <Typography variant='h5' sx={{py: 2, textAlign: 'center', fontWeight: 'bold'}}>
-                Conta Alerta
-              </Typography>
-
-              {erro && (
-                <div className="alert alert-danger">
-                  {erro}
-                </div>
-              )}        
-                  
-                  <TextField
-                    label="Email"
-                    type="email"
-                    fullWidth
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    required
-                    sx={{marginBottom: 2}}
-                  />                   
-
-                  <TextField
-                    label="Senha"
-                    type="password"
-                    fullWidth
-                    value={senha}
-                    onChange={(event) => setSenha(event.target.value)}
-                    required
-                    sx={{mb: 2}}
-                  />
-                
-                <Box sx={{display: 'flex', justifyContent: 'center', mt: 2}}>
-                    <Button
-                        type="submit"
-                        variant="contained"                  
-                        disabled={carregando}
+                <Box
+                    sx={{
+                        display: "flex",
+                        justifyContent: "space-around",
+                    }}
+                >
+                    <Card
+                        sx={{
+                            paddingX: 4,
+                            paddingY: 2,
+                            mt: 4,
+                        }}
                     >
-                    {carregando ? 'Entrando...' : 'Entrar'}
-                    </Button>
+
+                        <Form method="post" action="/login">
+
+                            <Typography
+                                variant="h5"
+                                sx={{
+                                    py: 2,
+                                    textAlign: "center",
+                                    fontWeight: "bold",
+                                }}
+                            >
+                                Conta Alerta
+                            </Typography>
+
+                            {actionData?.error && (
+                                <Alert severity="error">
+                                    {actionData.error}
+                                </Alert>
+                            )}
+
+                            <TextField
+                                label="Email"
+                                type="email"
+                                fullWidth
+                                name="email"
+                                required
+                                sx={{ marginBottom: 2 }}
+                            />
+
+                            <TextField
+                                label="Senha"
+                                type="password"
+                                name="password"
+                                fullWidth
+                                required
+                                sx={{ mb: 2 }}
+                            />
+
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    mt: 2,
+                                }}
+                            >
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting
+                                        ? "Entrando..."
+                                        : "Entrar"}
+                                </Button>
+                            </Box>
+
+                        </Form>
+
+                    </Card>
                 </Box>
-              
-          </Card>
-        </Box>
-      </div>
-    </div>
-  );
+
+            </div>
+        </div>
+    );
 }

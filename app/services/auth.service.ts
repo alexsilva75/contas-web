@@ -14,9 +14,9 @@ interface LoginResponse{
 }
 
 export const authService = {
-    async login(loginData: LoginDto): Promise<LoginResponse> {
-        try {
-            const response = await api('/auth/login', {
+    async login(loginData: LoginDto): Promise<LoginResponse> {        
+        
+            const response = await api('api/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -25,9 +25,7 @@ export const authService = {
             });
 
             return response;
-        } catch (error) {
-            throw new Error('Erro ao realizar login');
-        }
+        
     }
 }
 

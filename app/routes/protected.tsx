@@ -1,14 +1,28 @@
-// routes/protected.tsx
+import {
+    Outlet,
+    useLoaderData,
+} from "react-router";
 
-import { Navigate, Outlet } from "react-router";
-import { useAuth } from "../contexts/AuthContext";
+import type { Route } from "./+types/protected";
+
+import { requireUser } from "../server/authorization.server";
+
+export async function loader({
+    request,
+}: Route.LoaderArgs) {
+    return await requireUser(request);
+}
 
 export default function ProtectedLayout() {
-  const { isAuthenticated } = useAuth();
+    const { user } = useLoaderData<typeof loader>();
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+    return (
+        <>
+            <header>
+                Olá, {user.nome}
+            </header>
 
-  return <Outlet />;
+            <Outlet />
+        </>
+    );
 }

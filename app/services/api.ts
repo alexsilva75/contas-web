@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.API_URL;
+const API_URL = import.meta.env.VITE_API_URL;
 
 export class ApiError extends Error{
     status;
@@ -15,7 +15,7 @@ interface RequestOptions extends RequestInit{
 }
 
 export const api = async (endpoint: string, options: RequestOptions) => {
-
+    //console.log('API_URL: ', API_URL);
     const { auth = true, ...fetchOptions } = options;
 
     const headers = new Headers(fetchOptions.headers);
@@ -33,13 +33,15 @@ export const api = async (endpoint: string, options: RequestOptions) => {
 
     }
 
-    const response = await fetch(`/${API_URL}/${endpoint}`, {
+    const response = await fetch(`${API_URL}/${endpoint}`, {
         ...fetchOptions,
         headers,
     });
 
     if(!response.ok){
         let message = 'Ocorreu um erro na comunicação com o servidor';
+        
+
         if(response.status === 401){
             window.dispatchEvent(new Event('auth:logout'));
         }
@@ -57,6 +59,7 @@ export const api = async (endpoint: string, options: RequestOptions) => {
 
         }
 
+        //console.log("RESPONSE: ", response.status);
         throw new ApiError(response.status, message);
     }
 
